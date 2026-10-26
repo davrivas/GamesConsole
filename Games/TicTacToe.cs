@@ -2,17 +2,19 @@ namespace GamesConsole.Games;
 
 public class TicTacToe : IGame
 {
+    private const char HumanPlayer = 'X';
+    private const char ComputerPlayer = 'O';
+
     public void PlayGame()
     {
         char[] board = [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '];
-        char currentPlayer = 'X';
 
-        Console.WriteLine("Tic Tac Toe");
+        Console.WriteLine("Tic Tac Toe - You are X, the computer is O.");
 
         while (true)
         {
             DisplayBoard(board);
-            Console.Write($"Player {currentPlayer}, choose a cell (1-9): ");
+            Console.Write("Choose a cell (1-9): ");
 
             string? input = Console.ReadLine();
             if (input is null)
@@ -32,23 +34,39 @@ public class TicTacToe : IGame
                 continue;
             }
 
-            board[cell - 1] = currentPlayer;
+            board[cell - 1] = HumanPlayer;
 
-            if (HasWon(board, currentPlayer))
+            if (HasWon(board, HumanPlayer))
             {
                 DisplayBoard(board);
-                Console.WriteLine($"Player {currentPlayer} wins!");
+                Console.WriteLine("You win!");
                 return;
             }
 
-            if (Array.TrueForAll(board, mark => mark != ' '))
+            if (IsBoardFull(board))
             {
                 DisplayBoard(board);
                 Console.WriteLine("It's a draw!");
                 return;
             }
 
-            currentPlayer = currentPlayer == 'X' ? 'O' : 'X';
+            int computerMove = ChooseComputerMove(board);
+            board[computerMove] = ComputerPlayer;
+            Console.WriteLine($"The computer chooses cell {computerMove + 1}.");
+
+            if (HasWon(board, ComputerPlayer))
+            {
+                DisplayBoard(board);
+                Console.WriteLine("The computer wins!");
+                return;
+            }
+
+            if (IsBoardFull(board))
+            {
+                DisplayBoard(board);
+                Console.WriteLine("It's a draw!");
+                return;
+            }
         }
     }
 
@@ -76,5 +94,80 @@ public class TicTacToe : IGame
             (board[2] == player && board[5] == player && board[8] == player) ||
             (board[0] == player && board[4] == player && board[8] == player) ||
             (board[2] == player && board[4] == player && board[6] == player);
+    }
+
+    private static bool IsBoardFull(char[] board)
+    {
+        return Array.TrueForAll(board, mark => mark != ' ');
+    }
+
+    private static int ChooseComputerMove(char[] board)
+    {
+        int bestScore = int.MinValue;
+        List<int> bestMoves = [];
+
+        for (int cell = 0; cell < board.Length; cell++)
+        {
+            if (board[cell] != ' ')
+            {
+                continue;
+            }
+
+            board[cell] = ComputerPlayer;
+            int score = GetMinimaxScore(board, isComputerTurn: false, depth: 1);
+            board[cell] = ' ';
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestMoves.Clear();
+                bestMoves.Add(cell);
+            }
+            else if (score == bestScore)
+            {
+                bestMoves.Add(cell);
+            }
+        }
+
+        return bestMoves[Random.Shared.Next(bestMoves.Count)];
+    }
+
+    private static int GetMinimaxScore(char[] board, bool isComputerTurn, int depth)
+    {
+        if (HasWon(board, ComputerPlayer))
+        {
+            return 10 - depth;
+        }
+
+        if (HasWon(board, HumanPlayer))
+        {
+            return depth - 10;
+        }
+
+        if (IsBoardFull(board))
+        {
+            return 0;
+        }
+
+        int bestScore = isComputerTurn ? int.MinValue : int.MaxValue;
+        char currentPlayer = isComputerTurn ? ComputerPlayer : HumanPlayer;
+
+        for (int cell = 0; cell < board.Length; cell++)
+        {
+            if (board[cell] != ' ')
+            {
+                continue;
+            }
+
+            board[cell] = currentPlayer;
+            int score = GetMinimaxScore(board, !isComputerTurn, depth + 1);
+            board[cell] = ' ';
+
+            bestScore = isComputerTurn
+                ? Math.Max(bestScore, score)
+                : Math.Min(bestScore, score);
+        }
+
+        return bestScore;
     }
 }
