@@ -7,3 +7,8 @@ Available games:
 - Number Guessing
 - Rock, Paper, Scissors
 - Trivia Quiz
+- Word Scramble
+- Math Challenge
+- Mastermind
+- Pig
+- Connect Four
